@@ -27,12 +27,12 @@ defmodule XrmuxServer.Application do
                 id: HubSupervisor,
                 start: { XrmuxServer.HubSupervisor, :start_link, [] },
                 type: :supervisor
-            },
-            %{
-                id: HubComms,
-                start: { XrmuxServer.HubComms, :start_link, [] },
-                type: :worker
             }
+            # %{
+            #     id: HubComms,
+            #     start: { XrmuxServer.HubComms, :start_link, [] },
+            #     type: :worker
+            # }
         ]
 
         opts = [
@@ -51,8 +51,8 @@ defmodule XrmuxServer.Application do
     def start_webserver() do
         dispatch = :cowboy_router.compile([
             {:_, [
-                {"/",           XrmuxServer.Info_page,          []},
-                {"/connect",    XrmuxServer.WebsocketHandler,   []}
+                {"/",           XrmuxServer.InfoPage,           []},
+                {"/comms",      XrmuxServer.WebsocketHandler,   []}
             ]}
         ])
 

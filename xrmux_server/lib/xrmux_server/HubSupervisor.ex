@@ -34,16 +34,24 @@ defmodule XrmuxServer.HubSupervisor do
     # ----------------------------------------------------------------------------------------------------
     # Add an App if it doesn't already exist
     # ----------------------------------------------------------------------------------------------------
-    def add_app(from, appname) do
-        appname_atom = String.to_atom(appname)
-        child_spec = %{id: Hello, start: {XrmuxServer.App, :start_link, [appname_atom]}}
+    def add_app(from, appname_atom) do
+        # child_spec = %{id: Hello, start: {XrmuxServer.App, :start_link, [appname_atom]}}
+        # case DynamicSupervisor.start_child(:Hub, child_spec) do
+        #     {:ok, _appid} ->
+        #         IO.puts "Starting #{appname_atom}"
+        #         send :HubComms, {:add, appname_atom, from}
+        #     _ ->
+        #         IO.puts "#{appname_atom} already started"
+        #         send :HubComms, {:add, appname_atom, from}
+        # end
+
+        child_spec = %{id: App, start: {XrmuxServer.AppComms, :start_link, [appname_atom]}}
         case DynamicSupervisor.start_child(:Hub, child_spec) do
             {:ok, _appid} ->
-                IO.puts "Starting #{appname}"
-                send :HubComms, {:add, appname_atom, from}
-            _ ->
-                IO.puts "#{appname} already started"
-                send :HubComms, {:add, appname_atom, from}
+                IO.puts "Starting #{appname_atom}"
+                :ok
+            error ->
+                :ok
         end
     end
     # ----------------------------------------------------------------------------------------------------

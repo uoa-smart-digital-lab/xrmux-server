@@ -1,47 +1,27 @@
-# ********************************************************************************************************
-# HubComms
-#
-# By roy.davies@auckland.ac.nz
-#
-# Central communciations process for the hub to the different Apps and thus to each entity
-# ********************************************************************************************************
-defmodule XrmuxServer.HubComms do
+defmodule XrmuxServer.AppComms do
+    use GenServer
 
-    # ----------------------------------------------------------------------------------------------------
-    # Start the receive loop
-    # ----------------------------------------------------------------------------------------------------
-    def start_link() do
-        id = spawn_link XrmuxServer.HubComms, :loop, [%{}]
-        Process.register id, :HubComms
-        {:ok, id}
+    def start_link(appname_atom) do
+        {:ok, pid} = GenServer.start_link(XrmuxServer.AppComms, [appname_atom])
+        Process.register pid, appname_atom
+
+        supid = spawn_link XrmuxServer.AppSupervisor, :start_link, []
+        IO.puts "Sup ID #{inspect supid}"
+        Process.register supid, (appname_atom |> Atom.to_string()) <> "_sup" |> String.to_atom()
     end
-    # ----------------------------------------------------------------------------------------------------
 
-
-
-    # ----------------------------------------------------------------------------------------------------
-    # Maintain a state of which websocket processes are linked to this App
-    # ----------------------------------------------------------------------------------------------------
-    def loop(state) do
-        receive do
-            {:add, appname, pid} ->
-                newstate = add_pid_to_appname(state, appname, pid)
-                :erlang.display(newstate)
-                loop(newstate)
-            {:remove, pid} ->
-                newstate = remove_pid_from_list(state, pid)
-                :erlang.display(newstate)
-                loop(newstate)
-            {:send, appname, message, except} ->
-                appname_atom = String.to_atom(appname)
-                send_message_to_all(state, appname_atom, message, except)
-                loop(state)
-            other ->
-                IO.puts("Uninterpreted message received #{inspect other}")
-                loop(state)
-        end
+    @impl true
+    def init(init_arg) do
+        IO.puts "Arguments #{inspect init_arg}"
+        {:ok, %{}}
     end
-    # ----------------------------------------------------------------------------------------------------
+
+    @impl true
+    def handle_info(message, state) do
+        IO.puts "Message #{inspect message}"
+        IO.puts "State #{inspect state}"
+        {:noreply, state}
+    end
 
 
 
