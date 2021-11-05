@@ -13,8 +13,6 @@ defmodule XrmuxServer.HubSupervisor do
     # ----------------------------------------------------------------------------------------------------
     def start_link() do
         IO.puts "Hub Started"
-        # id = spawn_link XrmuxServer.HubSupervisor, :loop, [%{}]
-        # Process.register id, :HubComms
         DynamicSupervisor.start_link(__MODULE__, :ok, name: :Hub)
     end
     # ----------------------------------------------------------------------------------------------------
@@ -34,24 +32,14 @@ defmodule XrmuxServer.HubSupervisor do
     # ----------------------------------------------------------------------------------------------------
     # Add an App if it doesn't already exist
     # ----------------------------------------------------------------------------------------------------
-    def add_app(from, appname_atom) do
-        # child_spec = %{id: Hello, start: {XrmuxServer.App, :start_link, [appname_atom]}}
-        # case DynamicSupervisor.start_child(:Hub, child_spec) do
-        #     {:ok, _appid} ->
-        #         IO.puts "Starting #{appname_atom}"
-        #         send :HubComms, {:add, appname_atom, from}
-        #     _ ->
-        #         IO.puts "#{appname_atom} already started"
-        #         send :HubComms, {:add, appname_atom, from}
-        # end
-
-        child_spec = %{id: App, start: {XrmuxServer.AppComms, :start_link, [appname_atom]}}
-        case DynamicSupervisor.start_child(:Hub, child_spec) do
-            {:ok, _appid} ->
-                IO.puts "Starting #{appname_atom}"
-                :ok
-            error ->
-                :ok
+    def add_app_and_send_message(from, appname_atom, message) do
+        if ! Process.whereis(appname_atom) do
+            IO.puts "Starting App"
+            child_spec = %{id: App, start: {XrmuxServer.AppSupSup, :start_link, [from, appname_atom, message]}}
+            DynamicSupervisor.start_child(:Hub, child_spec)
+        else
+            IO.puts "App already running"
+            send appname_atom, {from, message}
         end
     end
     # ----------------------------------------------------------------------------------------------------
@@ -61,9 +49,9 @@ defmodule XrmuxServer.HubSupervisor do
     # ----------------------------------------------------------------------------------------------------
     # Remove an App if it exists
     # ----------------------------------------------------------------------------------------------------
-    def remove_app(from) do
-        IO.puts "Removing #{inspect from}"
-        send :HubComms, {:remove, from}
+    def remove_app(_from) do
+        # IO.puts "Removing #{inspect from}"
+        # send :HubComms, {:remove, from}
         # DynamicSupervisor.terminate_child(:Hub, pid)
     end
     # ----------------------------------------------------------------------------------------------------

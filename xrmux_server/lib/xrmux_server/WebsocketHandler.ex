@@ -116,12 +116,10 @@ defmodule XrmuxServer.WebsocketHandler do
             [{appname, rest}] ->
                 appname_atom = String.to_atom(appname)
                 IO.puts "Sending #{inspect rest} to #{appname_atom}"
-                if ! Process.whereis(appname_atom) do
-                    XrmuxServer.HubSupervisor.add_app(self(), appname_atom)
-                end
-                send appname_atom, {self(), rest}
+                XrmuxServer.HubSupervisor.add_app_and_send_message(self(), appname_atom, rest)
                 {:ok, state}
-            _ -> {:err, state}
+            _ ->
+                {:err, state}
         end
     end
     def interpret_message(other, state) do
