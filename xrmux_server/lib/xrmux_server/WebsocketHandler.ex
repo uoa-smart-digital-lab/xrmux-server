@@ -103,6 +103,13 @@ defmodule XrmuxServer.WebsocketHandler do
         XrmuxServer.HubSupervisor.add_app_and_send_message(self(), appname_atom, rest)
         {:ok, appname_atom}
     end
+
+    def interpret_message("connect", [appname], state) do
+      appname_atom = String.to_atom(appname)
+      IO.puts "Connecting to #{appname_atom}"
+      XrmuxServer.HubSupervisor.add_app_and_send_message(self(), appname_atom, [])
+      {:ok, appname_atom}
+    end
     # ----------------------------------------------------------------------------------------------------
 
 

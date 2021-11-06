@@ -47,9 +47,11 @@ defmodule XrmuxServer.AppComms do
 
         newstate = add_pid_to_list(state, from)
 
-        [entity | rest] = message
-        entity_atom = String.to_atom(entity)
-        XrmuxServer.AppSupervisor.add_entity_and_send_message(from, appname_atom, entity_atom, rest)
+        if message != [] do
+            [entity | rest] = message
+            entity_atom = String.to_atom(entity)
+            XrmuxServer.AppSupervisor.add_entity_and_send_message(from, appname_atom, entity_atom, rest)                
+        end
 
         {:noreply, newstate}
     end
@@ -82,7 +84,7 @@ defmodule XrmuxServer.AppComms do
     def send_message(_, [], _) do :ok end
     def send_message(appname_atom, [ws_pid | ws_pids], message) do
         IO.puts "Sending #{inspect message} to #{inspect ws_pid}"
-        send(ws_pid, [appname_atom | message])
+        send(ws_pid, %{:data => [appname_atom | message]})
         send_message(appname_atom, ws_pids, message)
         :ok
     end

@@ -37,13 +37,19 @@ defmodule XrmuxServer.HubSupervisor do
             IO.puts "Starting App"
             child_spec = %{id: App, start: {XrmuxServer.AppSupSup, :start_link, [from, appname_atom, message]}}
             DynamicSupervisor.start_child(:Hub, child_spec)
-            [entity | rest] = message
-            entity_atom = String.to_atom(entity)
-            XrmuxServer.AppSupervisor.add_entity_and_send_message(from, appname_atom, entity_atom, rest)
+            start_entity(from, appname_atom, message)
         else
             IO.puts "App already running"
             send appname_atom, {:in, from, appname_atom, message}
         end
+    end
+    def start_entity(_, _, []) do
+        :ok
+    end
+    def start_entity(from, appname_atom, message) do
+        [entity | rest] = message
+        entity_atom = String.to_atom(entity)
+        XrmuxServer.AppSupervisor.add_entity_and_send_message(from, appname_atom, entity_atom, rest)
     end
     # ----------------------------------------------------------------------------------------------------
 
