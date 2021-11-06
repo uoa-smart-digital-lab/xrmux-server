@@ -49,8 +49,8 @@ defmodule XrmuxServer.WebsocketHandler do
     # ----------------------------------------------------------------------------------------------------
     # What to do when the websocket closes
     # ----------------------------------------------------------------------------------------------------
-    def terminate(_reason, _req, _state) do
-        XrmuxServer.HubSupervisor.remove_app(self())
+    def terminate(_reason, _req, appname_atom) do
+        XrmuxServer.HubSupervisor.remove_app(self(), appname_atom)
         IO.puts "Websocket closed"
         :ok
     end
@@ -62,16 +62,7 @@ defmodule XrmuxServer.WebsocketHandler do
     # Once the connection is established, check and possibly start a node to manage the app communications
     # ----------------------------------------------------------------------------------------------------
     def websocket_init(state) do
-        start_app(state)
         {:ok, state}
-    end
-    # ----------------------------------------------------------------------------------------------------
-    def start_app(%{:appname => ""}) do
-        IO.puts "Websocket opened"
-    end
-    def start_app(%{:appname => appname}) do
-        XrmuxServer.HubSupervisor.add_app(self(), appname)
-        IO.puts "Websocket opened and connected to #{appname}"
     end
     # ----------------------------------------------------------------------------------------------------
 
@@ -82,7 +73,7 @@ defmodule XrmuxServer.WebsocketHandler do
     # ----------------------------------------------------------------------------------------------------
     def websocket_handle({:text, content}, state) do
         case JSON.decode(content) do
-            { :ok, message } -> interpret_message(message, state)
+            { :ok, message } -> interpret_message_from_device(message, state)
             _ -> {:ok, state}
         end
     end
@@ -96,35 +87,21 @@ defmodule XrmuxServer.WebsocketHandler do
     # ----------------------------------------------------------------------------------------------------
     # Interpret messages coming from the devices into actions
     # ----------------------------------------------------------------------------------------------------
-    # def interpret_message(%{ "appname" => appname, "entity" => entity}, state) do
-    #     IO.puts "Sending #{inspect data} to #{appname}"
-    #     send :HubComms, {:send, appname, data, self()}
-    #     {:ok, state}
-    # end
-    # def interpret_message(%{ "connect" => appname }, state) do
-    #     XrmuxServer.HubSupervisor.add_app(self(), appname)
-    #     IO.puts "Websocket opened and connected to #{appname}"
-    #     {:ok, state}
-    # end
-    # def interpret_message(%{ "entity" => entityname }, state) do
-    #     XrmuxServer.HubSupervisor.add_app(self(), appname)
-    #     IO.puts "Websocket opened and connected to #{appname}"
-    #     {:ok, state}
-    # end
-    def interpret_message(message, state) do
-        case Map.to_list(message) do
-            [{appname, rest}] ->
-                appname_atom = String.to_atom(appname)
-                IO.puts "Sending #{inspect rest} to #{appname_atom}"
-                XrmuxServer.HubSupervisor.add_app_and_send_message(self(), appname_atom, rest)
-                {:ok, state}
-            _ ->
-                {:err, state}
-        end
+    def interpret_message_from_device(message, state) do
+        [{command, info}] = Map.to_list(message)
+        interpret_message(command, info, state)
     end
-    def interpret_message(other, state) do
-        IO.puts ("External message #{inspect other}")
-        {:ok, state}
+
+    def interpret_message("data", [], state) do {:err, state} end
+    def interpret_message("data", [_], state) do {:err, state} end
+    def interpret_message("data", [_, _], state) do {:err, state} end
+    def interpret_message("data", [_, _, _], state) do {:err, state} end
+    def interpret_message("data", [_, _, _, _], state) do {:err, state} end
+    def interpret_message("data", [appname | rest], state) do
+        appname_atom = String.to_atom(appname)
+        IO.puts "Sending #{inspect rest} to #{appname_atom}"
+        XrmuxServer.HubSupervisor.add_app_and_send_message(self(), appname_atom, rest)
+        {:ok, appname_atom}
     end
     # ----------------------------------------------------------------------------------------------------
 
@@ -133,17 +110,13 @@ defmodule XrmuxServer.WebsocketHandler do
     # ----------------------------------------------------------------------------------------------------
     # Handle messages coming from internally
     # ----------------------------------------------------------------------------------------------------
-    def websocket_info(%{ :appname => appname, :data => data }, state) do
-        the_message = case JSON.encode(%{ "appname" => appname, :data => data }) do
-            {:ok, message} -> message
+    def websocket_info(message, state) do
+        the_message = case JSON.encode(message) do
+            {:ok, message_json} -> message_json
             _ -> "{\"err\":\"json\"}"
         end
 
         { [{:text, the_message}], state }
-    end
-    def websocket_info(other, state) do
-        IO.puts ("Internal message #{inspect other}")
-        {:ok, state}
     end
     # ----------------------------------------------------------------------------------------------------
 end
