@@ -20,8 +20,6 @@ defmodule XrmuxServer.Application do
         :observer.start()
         start_webserver()
 
-        IO.puts("Application Started")
-
         children = [
             %{
                 id: HubSupervisor,

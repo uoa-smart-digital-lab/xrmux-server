@@ -51,7 +51,6 @@ defmodule XrmuxServer.WebsocketHandler do
     # ----------------------------------------------------------------------------------------------------
     def terminate(_reason, _req, appname_atom) do
         XrmuxServer.HubSupervisor.remove_app(self(), appname_atom)
-        IO.puts "Websocket closed"
         :ok
     end
     # ----------------------------------------------------------------------------------------------------
@@ -99,14 +98,12 @@ defmodule XrmuxServer.WebsocketHandler do
     def interpret_message("data", [_, _, _, _], state) do {:err, state} end
     def interpret_message("data", [appname | rest], state) do
         appname_atom = String.to_atom(appname)
-        IO.puts "Sending #{inspect rest} to #{appname_atom}"
         XrmuxServer.HubSupervisor.add_app_and_send_message(self(), appname_atom, rest)
         {:ok, appname_atom}
     end
 
     def interpret_message("connect", [appname], state) do
       appname_atom = String.to_atom(appname)
-      IO.puts "Connecting to #{appname_atom}"
       XrmuxServer.HubSupervisor.add_app_and_send_message(self(), appname_atom, [])
       {:ok, appname_atom}
     end

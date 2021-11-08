@@ -12,7 +12,6 @@ defmodule XrmuxServer.HubSupervisor do
     # Start the Hub Supervisor - called by the main application process
     # ----------------------------------------------------------------------------------------------------
     def start_link() do
-        IO.puts "Hub Started"
         DynamicSupervisor.start_link(__MODULE__, :ok, name: :Hub)
     end
     # ----------------------------------------------------------------------------------------------------

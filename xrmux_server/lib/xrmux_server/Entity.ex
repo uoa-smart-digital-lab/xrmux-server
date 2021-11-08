@@ -12,7 +12,6 @@ defmodule XrmuxServer.Entity do
     # Start the entity process
     # ----------------------------------------------------------------------------------------------------
     def start_link(from, appname_atom, entity_atom, message) do
-        IO.puts "Starting Entity #{inspect entity_atom}"
         GenServer.start_link(__MODULE__, [from, appname_atom, entity_atom, message])
     end
     # ----------------------------------------------------------------------------------------------------

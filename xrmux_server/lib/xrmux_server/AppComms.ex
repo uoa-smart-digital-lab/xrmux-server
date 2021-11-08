@@ -12,7 +12,6 @@ defmodule XrmuxServer.AppComms do
     # Start the process
     # ----------------------------------------------------------------------------------------------------
     def start_link(from, appname_atom, message) do
-        IO.puts "Starting #{inspect appname_atom}"
         GenServer.start_link(__MODULE__, [from, appname_atom, message])
     end
     # ----------------------------------------------------------------------------------------------------
@@ -24,7 +23,6 @@ defmodule XrmuxServer.AppComms do
     # ----------------------------------------------------------------------------------------------------
     @impl true
     def init([from, appname_atom, _message]) do
-        IO.puts "Initing #{inspect appname_atom}"
         Process.register self(), appname_atom
         {:ok, MapSet.new([from])}
     end
