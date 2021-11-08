@@ -1,11 +1,17 @@
+# ********************************************************************************************************
+# AppSupervisor
+#
+# By roy.davies@auckland.ac.nz
+#
+# Contains the links to each App process for managing the entities
+# ********************************************************************************************************
 defmodule XrmuxServer.AppSupervisor do
     use DynamicSupervisor
 
     # ----------------------------------------------------------------------------------------------------
-    # Start the Hub Supervisor - called by the main application process
+    # Start the App Supervisor
     # ----------------------------------------------------------------------------------------------------
     def start_link(_from, appname_atom, _message) do
-        IO.puts "App Supervisor Started"
         name = (appname_atom |> Atom.to_string()) <> "_sup" |> String.to_atom()
         DynamicSupervisor.start_link(__MODULE__, :ok, name: name)
     end
@@ -14,7 +20,7 @@ defmodule XrmuxServer.AppSupervisor do
 
 
     # ----------------------------------------------------------------------------------------------------
-    # Initialisation for the Entities coming off the Hub
+    # Initialisation for the Entities coming off the App
     # ----------------------------------------------------------------------------------------------------
     @impl true
     def init(:ok) do
@@ -29,12 +35,10 @@ defmodule XrmuxServer.AppSupervisor do
     # ----------------------------------------------------------------------------------------------------
     def add_entity_and_send_message(from, appname_atom, entity_atom, message) do
         if ! Process.whereis(entity_atom) do
-            IO.puts "Starting Entity"
             name = (appname_atom |> Atom.to_string()) <> "_sup" |> String.to_atom()
             child_spec = %{id: Entity, start: {XrmuxServer.Entity, :start_link, [from, appname_atom, entity_atom, message]}}
             DynamicSupervisor.start_child(name, child_spec)
         else
-            IO.puts "Entity already running"
             send entity_atom, {from, appname_atom, entity_atom, message}
         end
     end

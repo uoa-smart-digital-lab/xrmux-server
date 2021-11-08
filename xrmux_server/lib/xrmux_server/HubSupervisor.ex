@@ -30,16 +30,29 @@ defmodule XrmuxServer.HubSupervisor do
 
 
     # ----------------------------------------------------------------------------------------------------
+    # Remove the given App from the tree - done once all the websockets are closed
+    # ----------------------------------------------------------------------------------------------------
+    def remove_app(appname_atom) do
+        name = (appname_atom |> Atom.to_string()) <> "_sup_sup" |> String.to_atom()
+        do_remove_app(Process.whereis(name))
+    end
+    def do_remove_app(nil) do end
+    def do_remove_app(pid) do
+        DynamicSupervisor.terminate_child(:Hub, pid)
+    end
+    # ----------------------------------------------------------------------------------------------------
+
+
+
+    # ----------------------------------------------------------------------------------------------------
     # Add an App if it doesn't already exist
     # ----------------------------------------------------------------------------------------------------
     def add_app_and_send_message(from, appname_atom, message) do
         if ! Process.whereis(appname_atom) do
-            IO.puts "Starting App"
             child_spec = %{id: App, start: {XrmuxServer.AppSupSup, :start_link, [from, appname_atom, message]}}
             DynamicSupervisor.start_child(:Hub, child_spec)
             start_entity(from, appname_atom, message)
         else
-            IO.puts "App already running"
             send appname_atom, {:in, from, appname_atom, message}
         end
     end
@@ -59,10 +72,7 @@ defmodule XrmuxServer.HubSupervisor do
     # Remove an App if it exists
     # ----------------------------------------------------------------------------------------------------
     def remove_app(from, appname_atom) do
-        send appname_atom, {:remove, from}
-        # IO.puts "Removing #{inspect from}"
-        # send :HubComms, {:remove, from}
-        # DynamicSupervisor.terminate_child(:Hub, pid)
+        send appname_atom, {:remove, from, appname_atom}
     end
     # ----------------------------------------------------------------------------------------------------
 end

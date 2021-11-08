@@ -28,11 +28,6 @@ defmodule XrmuxServer.Application do
                 start: { XrmuxServer.HubSupervisor, :start_link, [] },
                 type: :supervisor
             }
-            # %{
-            #     id: HubComms,
-            #     start: { XrmuxServer.HubComms, :start_link, [] },
-            #     type: :worker
-            # }
         ]
 
         opts = [
@@ -57,7 +52,7 @@ defmodule XrmuxServer.Application do
         ])
 
         :cowboy.start_clear(:http,
-            [{:port, 8080}],
+            [{:port, 8810}],
             %{:env => %{:dispatch => dispatch}}
         )
     end

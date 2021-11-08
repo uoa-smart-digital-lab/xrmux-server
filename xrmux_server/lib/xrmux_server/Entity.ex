@@ -1,7 +1,15 @@
+# ********************************************************************************************************
+# Entity
+#
+# By roy.davies@auckland.ac.nz
+#
+# A process that manages the communications for each entity of each app
+# ********************************************************************************************************
 defmodule XrmuxServer.Entity do
     use GenServer
 
     # ----------------------------------------------------------------------------------------------------
+    # Start the entity process
     # ----------------------------------------------------------------------------------------------------
     def start_link(from, appname_atom, entity_atom, message) do
         IO.puts "Starting Entity #{inspect entity_atom}"
@@ -12,10 +20,10 @@ defmodule XrmuxServer.Entity do
 
 
     # ----------------------------------------------------------------------------------------------------
+    # Initialise the entity process
     # ----------------------------------------------------------------------------------------------------
     @impl true
     def init([from, appname_atom, entity_atom, message]) do
-        IO.puts "Initing Entity #{inspect entity_atom}"
         Process.register self(), entity_atom
         interpret_message(from, appname_atom, entity_atom, message)
         {:ok, []}
@@ -24,6 +32,7 @@ defmodule XrmuxServer.Entity do
 
 
     # ----------------------------------------------------------------------------------------------------
+    # Handle the messages coming to the Entity, and send them back out again
     # ----------------------------------------------------------------------------------------------------
     @impl true
     def handle_info({from, appname_atom, entity_atom, message}, state) do
@@ -32,7 +41,6 @@ defmodule XrmuxServer.Entity do
     end
 
     def interpret_message(from, appname_atom, entity_atom, message) do
-        IO.puts "Entity #{inspect entity_atom} Message #{inspect message} for #{inspect appname_atom}"
         send appname_atom, {:out, from, appname_atom, [ entity_atom | message ]}
     end
     # ----------------------------------------------------------------------------------------------------
